@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const routes = require('./routes');
 
+const { Usuarios } = require('./models');
+
 const port = 3333;
 
 console.log('Configurando server ...');
@@ -13,4 +15,5 @@ httpServer.use(express.json());
 httpServer.use(routes);
 
 server.listen(port);
+
 console.log(`Servidor escutando na porta ${port}`);

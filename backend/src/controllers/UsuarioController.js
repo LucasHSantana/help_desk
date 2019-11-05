@@ -1,16 +1,22 @@
-const db = require('../database');
 const crypt = require('../services/crypt');
+const Sequelize = require('sequelize');
+const Op = Sequelize.Op;
+const moment = require('moment');
 
-async function getUsuario(request, response) {
-    const client = db.getDBClient();            
+const { Usuarios }  = require('../models');
 
-    try{                                   
-        const {user} = request.headers;        
+async function store(request, response) {    
+    const user = await Usuarios.create(request.body);
 
-        const res = await client.query(`SELECT * FROM usuario WHERE descricao = '${user}'`);            
+    return response.json(user);
+}
 
-        if (res.rows.length > 0) {
-            return response.json(res.rows);
+async function getUsuario(request, response) {            
+    try{                                          
+        const {user} = request.headers;                
+        const res = await Usuarios.findAll({where: { descricao: {[Op.like]: `%${user}%`} }});          
+        if (res.length > 0) {
+            return response.json(res);
         } else {
             return response.status(400).json({erro: 'Usuário não encontrado'});
         }              
@@ -18,22 +24,21 @@ async function getUsuario(request, response) {
         console.log(`Erro: ${err}`);    
         return response.status(500).json({erro: 'Erro interno no servidor'});
     } finally {                     
-        db.closeDBClient(client);
+        
     }
 }
 
-async function validaLogin(request, response){
-    const client = db.getDBClient();
+async function validaLogin(request, response){   
 
-    try {
+    try {        
         const { codigo, pass } = request.headers;            
             
-        const res = await client.query(`SELECT * FROM usuario WHERE codigo = '${codigo}' AND  senha = '${pass}'`);
+        const res = await Usuarios.findAll({where: {codigo: codigo, senha: pass}});        
 
-        if (res.rows.length > 0){            
-            const {encrypted, iv} =  tokenGenerator(codigo, res.rows[0].descricao);                         
+        if (res.length > 0){                      
+            const {encrypted, iv} =  tokenGenerator(codigo, res[0].dataValues.descricao);                         
 
-            return response.json({ status: 'SUCESSO', result: 1, token: encrypted, iv});                    
+            return response.json({ status: 'SUCESSO', result: 1, token: encrypted, iv});            
         } else {
             return response.json({ status: 'INVALIDO', result: 0});
         }
@@ -42,33 +47,24 @@ async function validaLogin(request, response){
         console.log(`Erro: ${err}`);
         return response.json({ status: 'ERRO', result: -1, error: err});
     } finally {
-        db.closeDBClient(client);
+        
     }
 }
 
 async function testeDecrypt(request, response){
-    const client = db.getDBClient();
-
     try {
-        const { codigo, pass, token, iv } = request.headers;            
-            
-        const res = await client.query(`SELECT * FROM usuario WHERE codigo = '${codigo}' AND  senha = '${pass}'`);
+        const {token, iv } = request.headers;  
+                    
+        ivBuffer = Buffer.from(iv, 'hex');            
+        decoded = await tokenValidate(token, ivBuffer);             
 
-        if (res.rows.length > 0){                        
-            ivBuffer = Buffer.from(iv, 'hex');
-            
-            decoded =  tokenValidate(codigo, res.rows[0].descricao, token, ivBuffer);                             
-
-            return response.json({ status: 'SUCESSO', result: 1, token: decoded});                    
-        } else {
-            return response.json({ status: 'INVALIDO', result: 0});
-        }
+        return response.json({ status: 'SUCESSO', result: 1, decoded});                            
         
     } catch (err) {
         console.log(`Erro: ${err}`);
-        return response.json({ status: 'ERRO', result: -1, error: err});
+        return response.json({ status: 'ERRO', result: -1, error: err.message});
     } finally {
-        db.closeDBClient(client);
+        
     }
 }
 
@@ -77,24 +73,44 @@ function dateToken(){
     return date;
 }
 
+function addZeros(num){
+    return ('0' + num).slice(-2);
+}
+
 function tokenGenerator(codigo, descricao) {
     const date = dateToken();
-    const plainText = codigo + descricao + date;
+    const plainText = addZeros(codigo.length) + addZeros(descricao.length) + codigo + descricao + date;
 
     const encrypted = crypt.encryptString(plainText);
         
     return encrypted;
 }
   
-function tokenValidate(codigo, descricao, token, iv){
-    const date = dateToken();  
-    const valid = codigo + descricao + date;         
+async function tokenValidate(token, iv){           
     const decrypted = crypt.decryptString(token, iv);     
   
-    return valid === decrypted;
+    const lenCodigo = parseInt(decrypted.substring(0, 2));
+    const lenDescricao = parseInt(decrypted.substring(2, 4));
+    
+    let pos = 4;
+    const codigo  = decrypted.substring(pos, pos + lenCodigo);  
+    pos += lenCodigo;
+
+    const descricao = decrypted.substring(pos, pos + lenDescricao);
+    pos += lenDescricao;
+    
+    const date = new Date(decrypted.substring(pos));
+
+    var base = moment();    
+    var diffDate = base.diff(date, 'days');
+    
+    const res = await Usuarios.findAll({where: {codigo: codigo, descricao: descricao}});
+
+    return (res.length > 0 && diffDate === 0);
 }
 
 module.exports = {   
+    store,
     getUsuario,
     validaLogin, 
     testeDecrypt,

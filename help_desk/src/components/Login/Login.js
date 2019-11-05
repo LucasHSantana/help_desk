@@ -62,11 +62,12 @@ class Login extends React.Component{
             } else if (response.data.result === 0){
                 this.setState({error: 'Usuário e/ou senha inválidos'});                
             } else {
-                alert('Erro ao realizar login: ' + response.data.error);
-                console.error(response.data.error);
+                alert('Erro ao realizar login: ' + response.data);
+                console.error(response.data);
             }
         } catch (err) {
             this.setState({error: "Houve um problema com o login, verifique suas credenciais."});
+            console.log(err);
         }
     }
 
