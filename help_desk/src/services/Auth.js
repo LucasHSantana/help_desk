@@ -1,4 +1,4 @@
-import api from './Api';
+// import api from './Api';
 
 const TOKEN_KEY = 'login_token';
 const IV_KEY = 'iv_token'

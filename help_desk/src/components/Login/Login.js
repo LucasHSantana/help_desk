@@ -42,7 +42,7 @@ class Login extends React.Component{
         }
 
         try{
-            // Função para verificiar se o login é valido
+            // Função para verificar se o login é valido
             const config = {
                 headers: {
                     codigo: username,
@@ -54,7 +54,7 @@ class Login extends React.Component{
 
             if (response.data.result === 1){
                 // Se o login for válido, salva o token no local storage
-                const token = response.data.token; // Trocar pelo response do server
+                const token = response.data.token; 
                 const iv = response.data.iv;
 
                 login(token, iv);
@@ -128,7 +128,7 @@ class Login extends React.Component{
     }
 
     render(){             
-        return(
+        return( 
             <div className="login-container">           
                 <div className="box">
                     <div id="login-box">
@@ -140,7 +140,7 @@ class Login extends React.Component{
                             <button type="submit">Login</button>                    
                         </form>
                         { !this.props.norecover &&
-                            <button onClick={this.showRecover}>Esqueci minha senha > </button>
+                            <button onClick={this.showRecover} id="recover-button">Esqueci minha senha ></button>
                         }
                     </div>
                     { !this.props.norecover &&
