@@ -1,5 +1,6 @@
 import React from 'react';
 import { login } from '../../services/Auth';
+import api from '../../services/Api';
 
 import './Login.css';
 import confirmation_svg from '../../assets/confirmation.svg';
@@ -17,7 +18,7 @@ class Login extends React.Component{
                 email: '',
                 error: '',
             };            
-        };                
+        };                 
     }
 
     handleChange = (event) => {
@@ -25,10 +26,10 @@ class Login extends React.Component{
         const name = target.name;
         const value = target.value;        
 
-        this.setState({[name]: value}, () => console.log(this.state));
+        this.setState({[name]: value});
     }
 
-    handleSubmit = (event) => {      
+    handleSubmit = async (event) => {      
         event.preventDefault();          
 
         const { username, password } = this.state;
@@ -41,14 +42,32 @@ class Login extends React.Component{
         }
 
         try{
-            // Função para verificiar se o login é valido
+            // Função para verificar se o login é valido
+            const config = {
+                headers: {
+                    codigo: username,
+                    pass: password
+                }
+            }
 
-            // Se o login for válido, salva o token no local storage
-            const token = 'teste'; // Trocar pelo response do server
-            login(token);        
-            this.props.history.push('/teste/'); 
+            const response = await api.post('/validaLogin', '', config);            
+
+            if (response.data.result === 1){
+                // Se o login for válido, salva o token no local storage
+                const token = response.data.token; 
+                const iv = response.data.iv;
+
+                login(token, iv);
+                this.props.history.push('/teste/'); 
+            } else if (response.data.result === 0){
+                this.setState({error: 'Usuário e/ou senha inválidos'});                
+            } else {
+                alert('Erro ao realizar login: ' + response.data);
+                console.error(response.data);
+            }
         } catch (err) {
             this.setState({error: "Houve um problema com o login, verifique suas credenciais."});
+            console.log(err);
         }
     }
 
@@ -109,7 +128,7 @@ class Login extends React.Component{
     }
 
     render(){             
-        return(
+        return( 
             <div className="login-container">           
                 <div className="box">
                     <div id="login-box">
@@ -121,7 +140,7 @@ class Login extends React.Component{
                             <button type="submit">Login</button>                    
                         </form>
                         { !this.props.norecover &&
-                            <button onClick={this.showRecover}>Esqueci minha senha > </button>
+                            <button onClick={this.showRecover} id="recover-button">Esqueci minha senha ></button>
                         }
                     </div>
                     { !this.props.norecover &&

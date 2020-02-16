@@ -13,4 +13,6 @@ httpServer.use(express.json());
 httpServer.use(routes);
 
 server.listen(port);
+console.log('Configurado!');
+
 console.log(`Servidor escutando na porta ${port}`);
