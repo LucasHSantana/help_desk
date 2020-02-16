@@ -2,30 +2,20 @@
 
 module.exports = {
   up: (queryInterface, Sequelize) => {
-    return queryInterface.createTable('Telefones',{
+    return queryInterface.createTable('Cidades',{
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      telefone: {
+      descricao: {
         allowNull: false,
-        type: Sequelize.STRING(15),        
+        type: Sequelize.STRING(60),        
       },
-      clientes_id: {
+      uf: {
         allowNull: false,
-        type: Sequelize.INTEGER,
-        references: {
-          model: 'Clientes',
-          key: 'id', 
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE',
-      },
-      telefone: {
-        allowNull: false,
-        type: Sequelize.STRING(20),        
+        type: Sequelize.STRING(2),        
       },
       createdAt: {
         allowNull: false,
@@ -39,6 +29,6 @@ module.exports = {
   },
 
   down: (queryInterface, Sequelize) => {
-    return queryInterface.dropTable('Telefones');
+    return queryInterface.dropTable('Cidades');
   }
 };
