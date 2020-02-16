@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import api from '../../services/Api';
 import ComboBox from '../common/ComboBox/ComboBox';
 import Erro from '../common/Erro/Erro';
-import statusCode from '../common/Bibli';
+import Loading from '../common/Loading/Loading';
 
 const estados = [
     {
@@ -116,7 +116,7 @@ const estados = [
 ]
     
 class Cidade extends Component {
-constructor(props){
+    constructor(props){
         super(props);
 
         this.state = {
@@ -126,6 +126,7 @@ constructor(props){
                 erro: '',
                 titulo: '',
                 subtitulo: '',
+                isLoading: false,
             },
             //Campo BD
             descricao: '',
@@ -157,7 +158,7 @@ constructor(props){
                 },
            });
     
-            if (response.data.code === statusCode.OK) {
+            if (response.data.result) {
                 console.log('OK');
             }else{
                 this.showError(true, response.data.error, 'Erro', ' ');                
@@ -165,6 +166,44 @@ constructor(props){
         } catch (error) {
            this.showError(true, error.message, 'Erro interno');
         }        
+    }
+
+    carregaDados = async () =>{        
+        const state = Object.assign({}, this.state);        
+        
+        try{    
+            const { id } = this.props.match.params;        
+
+            if (id) {            
+                const response = await api.get('/getCidade/' + id);            
+
+                if (response.data.result){                                  
+
+                    for (const campo in response.data.result){
+                        state[campo] = response.data.result[campo];
+                    }
+
+                    this.setState(state, () => {console.log(this.state)});
+
+                }
+            }else{
+                console.log('nada');
+            }
+        } catch (err) {
+            this.showError(true, err.message, 'Erro interno');
+        } finally {
+            state['interno'] = {...state.interno, isLoading: false};
+            this.setState(state, () => {console.log(this.state)});
+        }
+    }
+
+    componentDidMount = async () => {
+        const state = Object.assign({}, this.state);
+    
+        state['interno'] = {...state.interno, isLoading: true};
+        this.setState(state, () => {console.log(this.state)});
+
+        await this.carregaDados();                    
     }
 
     showError = (isErro, erro, titulo, subtitulo) => {
@@ -190,8 +229,14 @@ constructor(props){
     }
 
     render() {
+
         return ( 
             <div>
+                {
+                    this.state.interno.isLoading &&
+                    <Loading visible/>
+                }
+
                 { this.state.interno.isErro && 
                     <Erro 
                         titulo={this.state.interno.titulo} 
@@ -202,7 +247,7 @@ constructor(props){
                 }           
                 <div>                
                     <form onSubmit={this.handleSubmit}>
-                        <input type="text" name="descricao" placeholder="Descrição da cidade" onChange={this.handleChange} autoFocus={true}/>                    
+                        <input type="text" name="descricao" placeholder="Descrição da cidade" onChange={this.handleChange} value={this.state.descricao} autoFocus={true}/>
                         <ComboBox title="Estado" name="uf" list={estados} value={this.state.uf} onChange={this.handleChange}/>
                         <button type="reset">Cancelar</button>
                         <button type="submit">Gravar</button>

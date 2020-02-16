@@ -5,7 +5,7 @@ import { isAuthenticated } from './services/Auth';
 
 import Login from './components/Login/Login';
 import Protocolo from './components/Protocolo/Protocolo';
-import Loading from './components/Loading/Loading';
+import Loading from './components/common/Loading/Loading';
 import Cidade from './components/Cidade/Cidade';
 
 function PrivateRoute
@@ -39,7 +39,8 @@ export default function Routes(){
                 <Route path="/norecover" render={(routeProps) => <Login norecover {...routeProps}/>}/> 
                 {/* Rota privada que precisa de autenticação para continuar */}
                 <PrivateRoute path={"/teste"} component={Protocolo} />
-                <PrivateRoute path={"/cidade"} component={Cidade} />
+                <PrivateRoute path={"/cidade/:id"} component={Cidade} />
+                <PrivateRoute path={"/cidade"} component={Cidade} />                                
                 <Route path="/loading" render={(routeProps) => <Loading visible {...routeProps}/>} />
                 <Route path="*" component={ () => <h1>Página não encontrada</h1>} />
             </Switch>
