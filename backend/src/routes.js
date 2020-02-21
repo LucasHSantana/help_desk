@@ -13,8 +13,10 @@ routes.delete('/deleteUsuario', UsuarioController.deleteUsuario);
 
 //Cidades
 routes.post('/setCidade', CidadeController.setCidade);
+routes.get('/getCidade/:id', CidadeController.getCidadeById);
 routes.get('/getCidade', CidadeController.getCidade);
 routes.delete('/deleteCidade', CidadeController.deleteCidade);
+routes.put('/updateCidade/:id', CidadeController.updateCidade);
 
 
 module.exports = routes;

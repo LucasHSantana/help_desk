@@ -53,9 +53,8 @@ async function getCidade(request, response){
 */
 
     try {
-        // await validaToken(request, response);
-        
-        const { cidade_filter } = request.query;
+        // await validaToken(request, response);        
+        const { cidade_filter } = request.query;    
 
         //Se parametro para filtro for vazio, cancela a operação e retorna erro
         if (cidade_filter === ''){
@@ -66,24 +65,26 @@ async function getCidade(request, response){
         /*  Localiza a cidade
             Usa iLike para case insensitive
             Usa Sequelize.fn para usar a extensão unaccent (accent insensitive)
-        */                
+        */  
+
         const res = await Cidades.findAll(
             {where: 
                 Sequelize.where(Sequelize.fn('unaccent', Sequelize.col('descricao')), {[Op.iLike]: Sequelize.fn('unaccent', `%${cidade_filter}%`)}),
             }
-        );   
-            /*  Exemplo para quando precisar de mais de um parametro no where
+        );           
 
-                {where: [
-                Sequelize.where(Sequelize.fn('unaccent', Sequelize.col('descricao')), {[Op.iLike]: Sequelize.fn('unaccent', `%${cidade_filter}%`)}),
-                Sequelize.where(Sequelize.fn('unaccent', Sequelize.col('uf')), {[Op.iLike]: Sequelize.fn('unaccent', `%SP%`)})]
-                }); 
-            */                  
+        /*  Exemplo para quando precisar de mais de um parametro no where
+
+            {where: [
+            Sequelize.where(Sequelize.fn('unaccent', Sequelize.col('descricao')), {[Op.iLike]: Sequelize.fn('unaccent', `%${cidade_filter}%`)}),
+            Sequelize.where(Sequelize.fn('unaccent', Sequelize.col('uf')), {[Op.iLike]: Sequelize.fn('unaccent', `%SP%`)})]
+            }); 
+        */                          
 
         if (res.length <= 0){
             // return response.status(404).json({status: 'ERRO', result: -1, erros: 'Cidade não localizada!'});
             return geraStatus(response, statusCode.OK, 'Cidade não localizada', true);
-        }
+        }        
 
         // return response.json(res);
         return geraStatus(response, statusCode.OK, res);
@@ -91,6 +92,65 @@ async function getCidade(request, response){
     } catch (err){
         // return response.status(500).json({status: 'ERRO', result: -1, erros: err.message});
         return geraStatus(response, statusCode.INTERNAL_ERROR, err.message, true);
+    }
+}
+
+async function getCidadeById(request, response){
+    /*
+        Consulta uma cidade na base de dados através do ID enviado no parâmetro da Url
+    */
+
+    try {
+        const { id } = request.params; // Pega o parâmetro ID da Url
+
+        // Se não existe o parametro, gera erro
+        if (!id){
+            return geraStatus(response, statusCode.BAD_REQUEST, undefined, true);
+        }
+
+        // Realiza a consulta no BD através da PK
+        const res = await Cidades.findByPk(Number(id));
+
+        if (!res.id){
+            return geraStatus(response, statusCode.OK, 'Cidade não localizada', true);
+        }
+
+        return geraStatus(response, statusCode.OK, res);
+        
+    } catch (err) {
+        return geraStatus(response, statusCode.INTERNAL_ERROR, err.message, true);
+    }
+}
+
+async function updateCidade(request, response){
+    try {
+        const { id } = request.params;
+        const JCidade = request.body;
+
+        if (!id){
+            return geraStatus(response, statusCode.BAD_REQUEST, undefined, true);
+        }        
+
+        let cidade = await Cidades.findByPk(Number(id));
+
+        if (!cidade.id){
+            return geraStatus(response, statusCode.OK, 'Cidade não localizada', true);
+        }
+
+        for (key in cidade.rawAttributes) {
+            if ((JCidade[key] !== undefined) || (key !== 'id')){
+                if (JCidade[key] !== cidade[key]){                
+                    cidade.set(key, JCidade[key]);
+                }
+            }
+        }
+
+        const res = await cidade.save();        
+
+        return geraStatus(response, statusCode.OK, res);
+
+    } catch (err) {
+        return geraStatus(response, statusCode.INTERNAL_ERROR, err.message, true);   
     }
 }
 
@@ -128,5 +188,7 @@ async function deleteCidade(request, response) {
 module.exports = {
     setCidade,
     getCidade,
-    deleteCidade
+    getCidadeById,
+    deleteCidade,
+    updateCidade,
 }
