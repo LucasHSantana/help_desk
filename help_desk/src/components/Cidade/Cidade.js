@@ -129,6 +129,7 @@ class Cidade extends Component {
                 isLoading: false,
             },
             //Campo BD
+            id: '',
             descricao: '',
             uf: '',        
         }
@@ -152,11 +153,20 @@ class Cidade extends Component {
         event.preventDefault();
 
         try {
-            const response = await api.post('/setCidade', JSON.stringify(this.state), {
-                headers: {
-                     'content-type': 'application/json',
-                },
-           });
+            const response = [];
+            if (this.state.id > 0){
+                const response = await api.put('updateCidate', JSON.stringify(this.state),{
+                    headers: {
+                        'content-type': 'application/json',
+                    }
+                })
+            } else {
+                const response = await api.post('/setCidade', JSON.stringify(this.state), {
+                    headers: {
+                        'content-type': 'application/json',
+                    },
+                });
+            }
     
             if (response.data.result) {
                 console.log('OK');

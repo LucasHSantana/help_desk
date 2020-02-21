@@ -122,6 +122,38 @@ async function getCidadeById(request, response){
     }
 }
 
+async function updateCidade(request, response){
+    try {
+        const { id } = request.params;
+        const JCidade = request.body;
+
+        if (!id){
+            return geraStatus(response, statusCode.BAD_REQUEST, undefined, true);
+        }        
+
+        let cidade = await Cidades.findByPk(Number(id));
+
+        if (!cidade.id){
+            return geraStatus(response, statusCode.OK, 'Cidade não localizada', true);
+        }
+
+        for (key in cidade.rawAttributes) {
+            if ((JCidade[key] !== undefined) || (key !== 'id')){
+                if (JCidade[key] !== cidade[key]){                
+                    cidade.set(key, JCidade[key]);
+                }
+            }
+        }
+
+        const res = await cidade.save();        
+
+        return geraStatus(response, statusCode.OK, res);
+
+    } catch (err) {
+        return geraStatus(response, statusCode.INTERNAL_ERROR, err.message, true);   
+    }
+}
+
 async function deleteCidade(request, response) {
 /*  Deleta cidade cadastrada na base de dados
 
@@ -157,5 +189,6 @@ module.exports = {
     setCidade,
     getCidade,
     getCidadeById,
-    deleteCidade
+    deleteCidade,
+    updateCidade,
 }
